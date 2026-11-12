@@ -1,6 +1,9 @@
 package model;
 
-public abstract class UniversityMember {
+import java.io.Serializable;
+
+public abstract class UniversityMember implements Serializable {
+  private static final long serialVersionUID = 1L;
   protected String id;
   protected String name;
   protected String email;

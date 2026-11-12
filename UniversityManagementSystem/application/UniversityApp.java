@@ -1,12 +1,18 @@
 package application;
 
+import java.util.InputMismatchException;
 import java.util.Scanner;
+import model.UniversityException;
 import service.UniversityManger;
 
 public class UniversityApp {
+  private static final String DEFAULT_FILE = "university_data.ser";
+
   public static void main(String[] args) {
     Scanner sc = new Scanner(System.in);
     UniversityManger manager = new UniversityManger();
+
+    manager.loadData(DEFAULT_FILE);
 
     while (true) {
       System.out.println("\n1. Add Student");
@@ -34,191 +40,215 @@ public class UniversityApp {
       System.out.println("23. View Courses Assigned to a Faculty");
       System.out.println("24. View Courses Without Instructor");
       System.out.println("25. Give/View Feedback (Interface)");
-      System.out.println("0. Exit");
+      System.out.println("26. Save University Data to File");
+      System.out.println("27. Load University Data from File");
+      System.out.println("0. Save & Exit");
       System.out.print("Enter choice: ");
 
-      int choice = sc.nextInt();
-      sc.nextLine();
+      try {
+        int choice = sc.nextInt();
+        sc.nextLine();
 
-      switch (choice) {
-        case 1:
-          System.out.print("Student ID: ");
-          String id = sc.nextLine();
-          System.out.print("Name: ");
-          String name = sc.nextLine();
-          System.out.print("Program: ");
-          String prog = sc.nextLine();
-          System.out.print("Email: ");
-          String email = sc.nextLine();
-          manager.addStudent(id, name, prog, email);
-          break;
+        switch (choice) {
+          case 1:
+            System.out.print("Student ID: ");
+            String id = sc.nextLine();
+            System.out.print("Name: ");
+            String name = sc.nextLine();
+            System.out.print("Program: ");
+            String prog = sc.nextLine();
+            System.out.print("Email: ");
+            String email = sc.nextLine();
+            manager.addStudent(id, name, prog, email);
+            break;
 
-        case 2:
-          System.out.print("Student ID to remove: ");
-          manager.removeStudent(sc.nextLine());
-          break;
+          case 2:
+            System.out.print("Student ID to remove: ");
+            manager.removeStudent(sc.nextLine());
+            break;
 
-        case 3:
-          manager.displayAllStudents();
-          break;
+          case 3:
+            manager.displayAllStudents();
+            break;
 
-        case 4:
-          System.out.print("Course Code: ");
-          String code = sc.nextLine();
-          System.out.print("Course Name: ");
-          String cname = sc.nextLine();
-          System.out.print("Credits: ");
-          int credits = sc.nextInt();
-          System.out.print("Max Capacity: ");
-          int cap = sc.nextInt();
-          sc.nextLine();
-          manager.addCourse(code, cname, credits, cap);
-          break;
+          case 4:
+            System.out.print("Course Code: ");
+            String code = sc.nextLine();
+            System.out.print("Course Name: ");
+            String cname = sc.nextLine();
+            System.out.print("Credits: ");
+            int credits = sc.nextInt();
+            System.out.print("Max Capacity: ");
+            int cap = sc.nextInt();
+            sc.nextLine();
+            manager.addCourse(code, cname, credits, cap);
+            break;
 
-        case 5:
-          System.out.print("Course Code to remove: ");
-          manager.removeCourse(sc.nextLine());
-          break;
+          case 5:
+            System.out.print("Course Code to remove: ");
+            manager.removeCourse(sc.nextLine());
+            break;
 
-        case 6:
-          manager.displayAllCourses();
-          break;
+          case 6:
+            manager.displayAllCourses();
+            break;
 
-        case 7:
-          System.out.print("Enter Student ID: ");
-          manager.searchStudentById(sc.nextLine());
-          break;
+          case 7:
+            System.out.print("Enter Student ID: ");
+            manager.searchStudentById(sc.nextLine());
+            break;
 
-        case 8:
-          System.out.print("Enter Student Name: ");
-          manager.searchStudentByName(sc.nextLine());
-          break;
+          case 8:
+            System.out.print("Enter Student Name: ");
+            manager.searchStudentByName(sc.nextLine());
+            break;
 
-        case 9:
-          System.out.print("Enter Course Code or Name: ");
-          manager.searchCourse(sc.nextLine());
-          break;
+          case 9:
+            System.out.print("Enter Course Code or Name: ");
+            manager.searchCourse(sc.nextLine());
+            break;
 
-        case 10:
-          System.out.print("Student ID: ");
-          String regSid = sc.nextLine();
-          System.out.print("Course Code: ");
-          String regCcode = sc.nextLine();
-          manager.registerStudentForCourse(regSid, regCcode);
-          break;
+          case 10:
+            System.out.print("Student ID: ");
+            String regSid = sc.nextLine();
+            System.out.print("Course Code: ");
+            String regCcode = sc.nextLine();
+            manager.registerStudentForCourse(regSid, regCcode);
+            break;
 
-        case 11:
-          System.out.print("Student ID: ");
-          String wSid = sc.nextLine();
-          System.out.print("Course Code: ");
-          String wCcode = sc.nextLine();
-          manager.withdrawStudentFromCourse(wSid, wCcode);
-          break;
+          case 11:
+            System.out.print("Student ID: ");
+            String wSid = sc.nextLine();
+            System.out.print("Course Code: ");
+            String wCcode = sc.nextLine();
+            manager.withdrawStudentFromCourse(wSid, wCcode);
+            break;
 
-        case 12:
-          System.out.print("Student ID: ");
-          manager.displayCoursesForStudent(sc.nextLine());
-          break;
+          case 12:
+            System.out.print("Student ID: ");
+            manager.displayCoursesForStudent(sc.nextLine());
+            break;
 
-        case 13:
-          System.out.print("Course Code: ");
-          manager.displayStudentsInCourse(sc.nextLine());
-          break;
+          case 13:
+            System.out.print("Course Code: ");
+            manager.displayStudentsInCourse(sc.nextLine());
+            break;
 
-        case 14:
-          System.out.print("Enter Program: ");
-          manager.filterStudentsByProgram(sc.nextLine());
-          break;
+          case 14:
+            System.out.print("Enter Program: ");
+            manager.filterStudentsByProgram(sc.nextLine());
+            break;
 
-        case 15:
-          System.out.print("Min Credits: ");
-          int min = sc.nextInt();
-          System.out.print("Max Credits: ");
-          int max = sc.nextInt();
-          sc.nextLine();
-          manager.filterCoursesByCredits(min, max);
-          break;
+          case 15:
+            System.out.print("Min Credits: ");
+            int min = sc.nextInt();
+            System.out.print("Max Credits: ");
+            int max = sc.nextInt();
+            sc.nextLine();
+            manager.filterCoursesByCredits(min, max);
+            break;
 
-        case 16:
-          manager.displayStatistics();
-          break;
+          case 16:
+            manager.displayStatistics();
+            break;
 
-        case 17:
-          System.out.print("Faculty ID: ");
-          String fid = sc.nextLine();
-          System.out.print("Name: ");
-          String fname = sc.nextLine();
-          System.out.print("Department: ");
-          String dept = sc.nextLine();
-          System.out.print("Email: ");
-          String femail = sc.nextLine();
-          manager.addFaculty(fid, fname, dept, femail);
-          break;
+          case 17:
+            System.out.print("Faculty ID: ");
+            String fid = sc.nextLine();
+            System.out.print("Name: ");
+            String fname = sc.nextLine();
+            System.out.print("Department: ");
+            String dept = sc.nextLine();
+            System.out.print("Email: ");
+            String femail = sc.nextLine();
+            manager.addFaculty(fid, fname, dept, femail);
+            break;
 
-        case 18:
-          System.out.print("Faculty ID to remove: ");
-          manager.removeFaculty(sc.nextLine());
-          break;
+          case 18:
+            System.out.print("Faculty ID to remove: ");
+            manager.removeFaculty(sc.nextLine());
+            break;
 
-        case 19:
-          manager.displayAllFaculty();
-          break;
+          case 19:
+            manager.displayAllFaculty();
+            break;
 
-        case 20:
-          manager.displayAllMembers();
-          break;
+          case 20:
+            manager.displayAllMembers();
+            break;
 
-        case 21:
-          System.out.print("Search by (1) ID or (2) Name: ");
-          int sType = sc.nextInt();
-          sc.nextLine();
-          if (sType == 1) {
-            System.out.print("Enter Member ID: ");
-            manager.searchMemberById(sc.nextLine());
-          } else {
-            System.out.print("Enter Member Name: ");
-            manager.searchMemberByName(sc.nextLine());
-          }
-          break;
+          case 21:
+            System.out.print("Search by (1) ID or (2) Name: ");
+            int sType = sc.nextInt();
+            sc.nextLine();
+            if (sType == 1) {
+              System.out.print("Enter Member ID: ");
+              manager.searchMemberById(sc.nextLine());
+            } else {
+              System.out.print("Enter Member Name: ");
+              manager.searchMemberByName(sc.nextLine());
+            }
+            break;
 
-        case 22:
-          System.out.print("Faculty ID: ");
-          String instId = sc.nextLine();
-          System.out.print("Course Code: ");
-          String instCourse = sc.nextLine();
-          manager.assignInstructorToCourse(instId, instCourse);
-          break;
+          case 22:
+            System.out.print("Faculty ID: ");
+            String instId = sc.nextLine();
+            System.out.print("Course Code: ");
+            String instCourse = sc.nextLine();
+            manager.assignInstructorToCourse(instId, instCourse);
+            break;
 
-        case 23:
-          System.out.print("Faculty ID: ");
-          manager.displayCoursesByFaculty(sc.nextLine());
-          break;
+          case 23:
+            System.out.print("Faculty ID: ");
+            manager.displayCoursesByFaculty(sc.nextLine());
+            break;
 
-        case 24:
-          manager.displayCoursesWithoutInstructor();
-          break;
+          case 24:
+            manager.displayCoursesWithoutInstructor();
+            break;
 
-        case 25:
-          System.out.print("1. Give Feedback  2. View Feedback: ");
-          int fbChoice = sc.nextInt();
-          sc.nextLine();
-          System.out.print("Enter Faculty ID or Course Code: ");
-          String target = sc.nextLine();
-          if (fbChoice == 1) {
-            System.out.print("Enter Comment: ");
-            manager.giveFeedbackToTarget(target, sc.nextLine());
-          } else {
-            manager.viewFeedbackOfTarget(target);
-          }
-          break;
+          case 25:
+            System.out.print("1. Give Feedback  2. View Feedback: ");
+            int fbChoice = sc.nextInt();
+            sc.nextLine();
+            System.out.print("Enter Faculty ID or Course Code: ");
+            String target = sc.nextLine();
+            if (fbChoice == 1) {
+              System.out.print("Enter Comment: ");
+              manager.giveFeedbackToTarget(target, sc.nextLine());
+            } else {
+              manager.viewFeedbackOfTarget(target);
+            }
+            break;
 
-        case 0:
-          System.out.println("Exiting...");
-          sc.close();
-          return;
+          case 26:
+            System.out.print("Enter filename to save (press Enter for default '" + DEFAULT_FILE + "'): ");
+            String saveFile = sc.nextLine().trim();
+            manager.saveData(saveFile.isEmpty() ? DEFAULT_FILE : saveFile);
+            break;
 
-        default:
-          System.out.println("Invalid choice.");
+          case 27:
+            System.out.print("Enter filename to load (press Enter for default '" + DEFAULT_FILE + "'): ");
+            String loadFile = sc.nextLine().trim();
+            manager.loadData(loadFile.isEmpty() ? DEFAULT_FILE : loadFile);
+            break;
+
+          case 0:
+            manager.saveData(DEFAULT_FILE);
+            System.out.println("Exiting...");
+            sc.close();
+            return;
+
+          default:
+            System.out.println("Invalid choice.");
+        }
+      } catch (UniversityException e) {
+        System.out.println("Operation Error: " + e.getMessage());
+      } catch (InputMismatchException e) {
+        System.out.println("Input Error: Please enter a valid numeric value.");
+        sc.nextLine();
+      } catch (Exception e) {
+        System.out.println("Unexpected Error: " + e.getMessage());
       }
     }
   }

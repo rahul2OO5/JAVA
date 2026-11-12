@@ -1,8 +1,10 @@
 package model;
 
 import java.util.ArrayList;
+import java.io.Serializable;
 
-public class course implements Feedback {
+public class course implements Feedback, Serializable {
+  private static final long serialVersionUID = 1L;
   private String code;
   private String name;
   private int credits;

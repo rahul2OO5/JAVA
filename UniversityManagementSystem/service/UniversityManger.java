@@ -1,5 +1,6 @@
 package service;
 
+import java.io.*;
 import java.util.ArrayList;
 import model.student;
 import model.course;
@@ -7,6 +8,7 @@ import model.Enrollment;
 import model.Faculty;
 import model.Feedback;
 import model.UniversityMember;
+import model.UniversityException;
 
 public class UniversityManger {
   private ArrayList<student> students;
@@ -19,6 +21,43 @@ public class UniversityManger {
     courses = new ArrayList<>();
     enrollments = new ArrayList<>();
     members = new ArrayList<>();
+  }
+
+  public void saveData(String filename) {
+    try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
+      oos.writeObject(students);
+      oos.writeObject(courses);
+      oos.writeObject(enrollments);
+      oos.writeObject(members);
+      System.out.println("University data saved successfully to " + filename);
+    } catch (FileNotFoundException e) {
+      System.out.println("File Error: Cannot create or access '" + filename + "' (" + e.getMessage() + ")");
+    } catch (IOException e) {
+      System.out.println("I/O Error while saving data: " + e.getMessage());
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public void loadData(String filename) {
+    File file = new File(filename);
+    if (!file.exists()) {
+      System.out.println("Notice: Data file '" + filename + "' not found. Starting with an empty system.");
+      return;
+    }
+
+    try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+      students = (ArrayList<student>) ois.readObject();
+      courses = (ArrayList<course>) ois.readObject();
+      enrollments = (ArrayList<Enrollment>) ois.readObject();
+      members = (ArrayList<UniversityMember>) ois.readObject();
+      System.out.println("University data loaded successfully from " + filename);
+    } catch (FileNotFoundException e) {
+      System.out.println("File Error: File '" + filename + "' is inaccessible.");
+    } catch (IOException e) {
+      System.out.println("I/O Error while reading data (file may be corrupted): " + e.getMessage());
+    } catch (ClassNotFoundException e) {
+      System.out.println("Data Error: Class structure mismatch during load: " + e.getMessage());
+    }
   }
 
   private student findStudent(String id) {
@@ -41,6 +80,24 @@ public class UniversityManger {
     return null;
   }
 
+  private UniversityMember findMember(String id) {
+    id = id.trim();
+    for (UniversityMember m : members) {
+      if (m.getId().equalsIgnoreCase(id)) {
+        return m;
+      }
+    }
+    return null;
+  }
+
+  private Faculty findFaculty(String id) {
+    UniversityMember m = findMember(id);
+    if (m instanceof Faculty) {
+      return (Faculty) m;
+    }
+    return null;
+  }
+
   private int getEnrolledCount(String courseCode) {
     int count = 0;
     for (Enrollment e : enrollments) {
@@ -51,10 +108,9 @@ public class UniversityManger {
     return count;
   }
 
-  public void addStudent(String id, String name, String program, String email) {
-    if (findStudent(id) != null) {
-      System.out.println("Student with ID " + id.trim() + " already exists.");
-      return;
+  public void addStudent(String id, String name, String program, String email) throws UniversityException {
+    if (findMember(id) != null) {
+      throw new UniversityException("Duplicate ID: A member with ID '" + id.trim() + "' already exists.");
     }
     student s = new student(id, name, program, email);
     students.add(s);
@@ -62,11 +118,10 @@ public class UniversityManger {
     System.out.println("Student added successfully.");
   }
 
-  public void removeStudent(String id) {
+  public void removeStudent(String id) throws UniversityException {
     student s = findStudent(id);
     if (s == null) {
-      System.out.println("Student not found.");
-      return;
+      throw new UniversityException("Student with ID '" + id.trim() + "' not found.");
     }
     for (int i = enrollments.size() - 1; i >= 0; i--) {
       if (enrollments.get(i).getStudent().getId().equalsIgnoreCase(s.getId())) {
@@ -88,20 +143,21 @@ public class UniversityManger {
     }
   }
 
-  public void addCourse(String code, String name, int credits, int maxCapacity) {
+  public void addCourse(String code, String name, int credits, int maxCapacity) throws UniversityException {
     if (findCourse(code) != null) {
-      System.out.println("Course with code " + code.trim() + " already exists.");
-      return;
+      throw new UniversityException("Duplicate Course: Course with code '" + code.trim() + "' already exists.");
+    }
+    if (credits <= 0 || maxCapacity <= 0) {
+      throw new UniversityException("Invalid Input: Credits and Max Capacity must be greater than 0.");
     }
     courses.add(new course(code, name, credits, maxCapacity));
     System.out.println("Course added successfully.");
   }
 
-  public void removeCourse(String code) {
+  public void removeCourse(String code) throws UniversityException {
     course c = findCourse(code);
     if (c == null) {
-      System.out.println("Course not found.");
-      return;
+      throw new UniversityException("Course with code '" + code.trim() + "' not found.");
     }
     for (int i = enrollments.size() - 1; i >= 0; i--) {
       if (enrollments.get(i).getCourse().getCode().equalsIgnoreCase(c.getCode())) {
@@ -122,16 +178,15 @@ public class UniversityManger {
     }
   }
 
-  public void searchStudentById(String id) {
+  public void searchStudentById(String id) throws UniversityException {
     student s = findStudent(id);
     if (s == null) {
-      System.out.println("No student found with ID: " + id);
-    } else {
-      s.display();
+      throw new UniversityException("No student found with ID: " + id);
     }
+    s.display();
   }
 
-  public void searchStudentByName(String keyword) {
+  public void searchStudentByName(String keyword) throws UniversityException {
     String key = keyword.trim().toLowerCase();
     boolean found = false;
     for (student s : students) {
@@ -141,11 +196,11 @@ public class UniversityManger {
       }
     }
     if (!found) {
-      System.out.println("No student found matching name: " + keyword);
+      throw new UniversityException("No student found matching name: " + keyword);
     }
   }
 
-  public void searchCourse(String keyword) {
+  public void searchCourse(String keyword) throws UniversityException {
     String key = keyword.trim().toLowerCase();
     boolean found = false;
     for (course c : courses) {
@@ -155,41 +210,37 @@ public class UniversityManger {
       }
     }
     if (!found) {
-      System.out.println("No course found matching: " + keyword);
+      throw new UniversityException("No course found matching: " + keyword);
     }
   }
 
-  public void registerStudentForCourse(String studentId, String courseCode) {
+  public void registerStudentForCourse(String studentId, String courseCode) throws UniversityException {
     student s = findStudent(studentId);
     if (s == null) {
-      System.out.println("Student not found.");
-      return;
+      throw new UniversityException("Registration failed: Student ID '" + studentId.trim() + "' does not exist.");
     }
     course c = findCourse(courseCode);
     if (c == null) {
-      System.out.println("Course not found.");
-      return;
+      throw new UniversityException("Registration failed: Course code '" + courseCode.trim() + "' does not exist.");
     }
 
     for (Enrollment e : enrollments) {
       if (e.getStudent().getId().equalsIgnoreCase(s.getId()) &&
           e.getCourse().getCode().equalsIgnoreCase(c.getCode())) {
-        System.out.println("Student is already registered in this course.");
-        return;
+        throw new UniversityException("Duplicate Registration: Student is already registered in " + c.getCode() + ".");
       }
     }
 
     int currentEnrolled = getEnrolledCount(c.getCode());
     if (currentEnrolled >= c.getMaxCapacity()) {
-      System.out.println("Registration failed. Course is full.");
-      return;
+      throw new UniversityException("Registration failed: Course " + c.getCode() + " is at full capacity.");
     }
 
     enrollments.add(new Enrollment(s, c));
     System.out.println("Student " + s.getName() + " registered for " + c.getCode() + " successfully.");
   }
 
-  public void withdrawStudentFromCourse(String studentId, String courseCode) {
+  public void withdrawStudentFromCourse(String studentId, String courseCode) throws UniversityException {
     for (int i = 0; i < enrollments.size(); i++) {
       Enrollment e = enrollments.get(i);
       if (e.getStudent().getId().equalsIgnoreCase(studentId.trim()) &&
@@ -199,14 +250,14 @@ public class UniversityManger {
         return;
       }
     }
-    System.out.println("Enrollment record not found.");
+    throw new UniversityException(
+        "Enrollment record not found for Student '" + studentId + "' in Course '" + courseCode + "'.");
   }
 
-  public void displayCoursesForStudent(String studentId) {
+  public void displayCoursesForStudent(String studentId) throws UniversityException {
     student s = findStudent(studentId);
     if (s == null) {
-      System.out.println("Student not found.");
-      return;
+      throw new UniversityException("Student with ID '" + studentId.trim() + "' not found.");
     }
     boolean found = false;
     System.out.println("Courses registered by " + s.getName() + ":");
@@ -221,11 +272,10 @@ public class UniversityManger {
     }
   }
 
-  public void displayStudentsInCourse(String courseCode) {
+  public void displayStudentsInCourse(String courseCode) throws UniversityException {
     course c = findCourse(courseCode);
     if (c == null) {
-      System.out.println("Course not found.");
-      return;
+      throw new UniversityException("Course with code '" + courseCode.trim() + "' not found.");
     }
     boolean found = false;
     System.out.println("Students enrolled in " + c.getName() + " (" + c.getCode() + "):");
@@ -326,38 +376,18 @@ public class UniversityManger {
     }
   }
 
-  private UniversityMember findMember(String id) {
-    id = id.trim();
-    for (UniversityMember m : members) {
-      if (m.getId().equalsIgnoreCase(id)) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  private Faculty findFaculty(String id) {
-    UniversityMember m = findMember(id);
-    if (m instanceof Faculty) {
-      return (Faculty) m;
-    }
-    return null;
-  }
-
-  public void addFaculty(String id, String name, String department, String email) {
+  public void addFaculty(String id, String name, String department, String email) throws UniversityException {
     if (findMember(id) != null) {
-      System.out.println("Faculty member already exists!");
-      return;
+      throw new UniversityException("Duplicate ID: A university member with ID '" + id.trim() + "' already exists.");
     }
     members.add(new Faculty(id, name, department, email));
-    System.out.println("Faulty added sucessfully!!");
+    System.out.println("Faculty added successfully!");
   }
 
-  public void removeFaculty(String id) {
+  public void removeFaculty(String id) throws UniversityException {
     Faculty f = findFaculty(id);
     if (f == null) {
-      System.out.println("faculty does not exists");
-      return;
+      throw new UniversityException("Faculty member with ID '" + id.trim() + "' does not exist.");
     }
     for (course c : courses) {
       if (c.getInstructor() != null && c.getInstructor().getId().equalsIgnoreCase(f.getId())) {
@@ -365,12 +395,13 @@ public class UniversityManger {
       }
     }
     members.remove(f);
-    System.out.println("Faculty remove sucessfully");
+    System.out.println("Faculty removed successfully.");
   }
 
   public void displayAllMembers() {
     if (members.isEmpty()) {
       System.out.println("No university member registered!");
+      return;
     }
     for (UniversityMember m : members) {
       m.display();
@@ -386,20 +417,19 @@ public class UniversityManger {
       }
     }
     if (!found) {
-      System.out.println("There is no member exists in the Faculty!");
+      System.out.println("There is no member in the Faculty!");
     }
   }
 
-  public void searchMemberById(String id) {
+  public void searchMemberById(String id) throws UniversityException {
     UniversityMember m = findMember(id);
     if (m == null) {
-      System.out.println("No member found!");
-    } else {
-      m.display();
+      throw new UniversityException("No university member found with ID: " + id);
     }
+    m.display();
   }
 
-  public void searchMemberByName(String name) {
+  public void searchMemberByName(String name) throws UniversityException {
     String key = name.trim().toLowerCase();
     boolean found = false;
     for (UniversityMember m : members) {
@@ -409,30 +439,27 @@ public class UniversityManger {
       }
     }
     if (!found) {
-      System.out.println("No member found !");
+      throw new UniversityException("No university member found matching name: " + name);
     }
-
   }
 
-  public void assignInstructorToCourse(String facultyId, String courseCode) {
+  public void assignInstructorToCourse(String facultyId, String courseCode) throws UniversityException {
     Faculty f = findFaculty(facultyId);
     if (f == null) {
-      System.out.println("No insturctor present!");
-      return;
+      throw new UniversityException("Invalid Instructor: No faculty found with ID '" + facultyId.trim() + "'.");
     }
     course c = findCourse(courseCode);
     if (c == null) {
-      System.out.println("No couse present!");
-      return;
+      throw new UniversityException("Course not found with code '" + courseCode.trim() + "'.");
     }
     c.setInstructor(f);
+    System.out.println("Instructor " + f.getName() + " assigned to course " + c.getCode() + " successfully.");
   }
 
-  public void displayCoursesByFaculty(String facultyId) {
+  public void displayCoursesByFaculty(String facultyId) throws UniversityException {
     Faculty f = findFaculty(facultyId);
     if (f == null) {
-      System.out.println("Faculty member not found.");
-      return;
+      throw new UniversityException("Faculty member with ID '" + facultyId.trim() + "' not found.");
     }
     boolean found = false;
     System.out.println("Courses assigned to Prof. " + f.getName() + ":");
@@ -461,26 +488,24 @@ public class UniversityManger {
     }
   }
 
-  public void giveFeedbackToTarget(String idOrCode, String comment) {
+  public void giveFeedbackToTarget(String idOrCode, String comment) throws UniversityException {
     Feedback target = findFaculty(idOrCode);
     if (target == null) {
       target = findCourse(idOrCode);
     }
     if (target == null) {
-      System.out.println("No Faculty or Course found with ID or course Code: " + idOrCode);
-      return;
+      throw new UniversityException("No Faculty or Course found with ID/Code: " + idOrCode);
     }
     target.giveFeedback(comment);
   }
 
-  public void viewFeedbackOfTarget(String idOrCode) {
+  public void viewFeedbackOfTarget(String idOrCode) throws UniversityException {
     Feedback target = findFaculty(idOrCode);
     if (target == null) {
       target = findCourse(idOrCode);
     }
     if (target == null) {
-      System.out.println("No Faculty or Course found with ID or course Code: " + idOrCode);
-      return;
+      throw new UniversityException("No Faculty or Course found with ID/Code: " + idOrCode);
     }
     target.showFeedback();
   }
